@@ -13,7 +13,7 @@ import type {
   PaymentMethod,
 } from '@/types'
 
-export const WHATSAPP_NUMBER = '5511982131799'
+export const WHATSAPP_NUMBER = '5582987220046'
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
 export const WHATSAPP_MESSAGE =
   'Olá, equipe CJE Express. Preciso de atendimento sobre uma demanda.'
