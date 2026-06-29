@@ -19,8 +19,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+export const dynamic = 'force-dynamic'
+
 export default function ForgotPasswordPage() {
-  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -33,6 +34,7 @@ export default function ForgotPasswordPage() {
   async function onSubmit(data: FormData) {
     setIsLoading(true)
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })

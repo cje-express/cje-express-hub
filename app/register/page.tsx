@@ -46,9 +46,10 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>
 
+export const dynamic = 'force-dynamic'
+
 export default function RegisterPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
 
   const {
@@ -64,6 +65,7 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterForm) {
     setIsLoading(true)
     try {
+      const supabase = createClient()
       // 1. Criar organização
       const { data: org, error: orgError } = await supabase
         .from('organizations')
