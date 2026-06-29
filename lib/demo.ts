@@ -1,0 +1,257 @@
+import type { Profile, Organization, Demand, DashboardStats } from '@/types'
+
+export const IS_DEMO_MODE =
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
+
+export const DEMO_COOKIE = 'cje_demo_session'
+
+const DEMO_ORG_CJE: Organization = {
+  id: 'demo-org-cje',
+  type: 'interno',
+  name: 'CJE Express',
+  corporate_name: 'CJE SERVICOS DE APOIO ADMNISTRATIVO LTDA',
+  cnpj_cpf: '54.787.995/0001-01',
+  email: 'contato@cjeexpress.com.br',
+  phone: '(11) 98213-1799',
+  whatsapp: '5511982131799',
+  address: 'Rua das Acácias, 100',
+  city: 'São Bernardo do Campo',
+  state: 'SP',
+  zip_code: '09725-000',
+  status: 'active',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  deleted_at: null,
+}
+
+const DEMO_ORG_CLIENTE: Organization = {
+  id: 'demo-org-cliente',
+  type: 'escritorio_advocacia',
+  name: 'Escritório Demo Advogados',
+  corporate_name: 'Demo Advogados S/S Ltda',
+  cnpj_cpf: '12.345.678/0001-99',
+  email: 'contato@demo-adv.com.br',
+  phone: '(11) 3333-4444',
+  whatsapp: null,
+  address: 'Av. Paulista, 1000 — Sala 10',
+  city: 'São Paulo',
+  state: 'SP',
+  zip_code: '01310-100',
+  status: 'active',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  deleted_at: null,
+}
+
+export const DEMO_USERS: Record<string, { password: string; profile: Profile }> = {
+  'operador@cje.com.br': {
+    password: 'Operador@123',
+    profile: {
+      id: 'demo-op-cje-001',
+      auth_user_id: 'demo-auth-op-cje-001',
+      organization_id: 'demo-org-cje',
+      name: 'Carlos Operador CJE',
+      email: 'operador@cje.com.br',
+      phone: '(11) 97777-6666',
+      role: 'OPERADOR_CJE',
+      status: 'active',
+      avatar_url: null,
+      created_at: '2024-03-01T00:00:00Z',
+      updated_at: '2024-03-01T00:00:00Z',
+      last_login_at: new Date().toISOString(),
+      organization: DEMO_ORG_CJE,
+    },
+  },
+  'admin@cje.com.br': {
+    password: 'Admin@123',
+    profile: {
+      id: 'demo-admin-001',
+      auth_user_id: 'demo-auth-admin-001',
+      organization_id: 'demo-org-cje',
+      name: 'Administrador CJE',
+      email: 'admin@cje.com.br',
+      phone: '(11) 98213-1799',
+      role: 'SUPER_ADMIN_CJE',
+      status: 'active',
+      avatar_url: null,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      last_login_at: new Date().toISOString(),
+      organization: DEMO_ORG_CJE,
+    },
+  },
+  'cliente@teste.com.br': {
+    password: 'Cliente@123',
+    profile: {
+      id: 'demo-client-001',
+      auth_user_id: 'demo-auth-client-001',
+      organization_id: 'demo-org-cliente',
+      name: 'João Demo Silva',
+      email: 'cliente@teste.com.br',
+      phone: '(11) 99999-8888',
+      role: 'ADMIN_CLIENTE',
+      status: 'active',
+      avatar_url: null,
+      created_at: '2024-01-15T00:00:00Z',
+      updated_at: '2024-01-15T00:00:00Z',
+      last_login_at: new Date().toISOString(),
+      organization: DEMO_ORG_CLIENTE,
+    },
+  },
+}
+
+export function getDemoProfile(userId: string): Profile | null {
+  for (const user of Object.values(DEMO_USERS)) {
+    if (user.profile.id === userId) return user.profile
+  }
+  return null
+}
+
+export function validateDemoLogin(email: string, password: string): Profile | null {
+  const user = DEMO_USERS[email.toLowerCase()]
+  if (!user || user.password !== password) return null
+  return user.profile
+}
+
+const BASE_DEMAND = {
+  charge_to: null as null,
+  charge_to_name: null as null,
+  is_value_confirmed_externally: false,
+  ai_generated_data: null as null,
+  ai_reviewed_by_client: false,
+}
+
+export const DEMO_DEMANDS: Demand[] = [
+  {
+    ...BASE_DEMAND,
+    id: 'demo-demand-001',
+    protocol_number: 'CJE-20240601-0001',
+    organization_id: 'demo-org-cliente',
+    created_by_user_id: 'demo-client-001',
+    assigned_admin_id: 'demo-admin-001',
+    title: 'Audiência Trabalhista — São Paulo/SP',
+    demand_type: 'audiencia',
+    other_demand_type: null,
+    status: 'em_andamento',
+    urgency: 'normal',
+    city: 'São Paulo',
+    state: 'SP',
+    service_location: 'Fórum Trabalhista Ruy Barbosa',
+    deadline_date: '2026-07-10',
+    deadline_time: '14:00',
+    process_number: '0001234-56.2024.5.02.0001',
+    required_professional: 'advogado_e_preposto',
+    instructions: 'Comparecer com 30 minutos de antecedência.',
+    admin_notes: 'Profissional alocado: Dr. Ricardo Melo',
+    client_notes: null,
+    service_value: 350.0,
+    billing_type: 'avulsa',
+    demand_source: 'client_form',
+    scheduled_at: '2026-06-28T09:00:00Z',
+    started_at: '2026-06-28T09:05:00Z',
+    completed_at: null,
+    canceled_at: null,
+    cancel_reason: null,
+    archived_at: null,
+    created_at: '2026-06-01T10:00:00Z',
+    updated_at: '2026-06-28T09:00:00Z',
+    deleted_at: null,
+  },
+  {
+    ...BASE_DEMAND,
+    id: 'demo-demand-002',
+    protocol_number: 'CJE-20240605-0002',
+    organization_id: 'demo-org-cliente',
+    created_by_user_id: 'demo-client-001',
+    assigned_admin_id: null,
+    title: 'Protocolo — Santo André/SP',
+    demand_type: 'protocolos',
+    other_demand_type: null,
+    status: 'nova_solicitacao',
+    urgency: 'urgente',
+    city: 'Santo André',
+    state: 'SP',
+    service_location: null,
+    deadline_date: '2026-07-20',
+    deadline_time: '17:00',
+    process_number: null,
+    required_professional: null,
+    instructions: 'Protocolar petição em 3 vias.',
+    admin_notes: null,
+    client_notes: null,
+    service_value: null,
+    billing_type: 'avulsa',
+    demand_source: 'client_form',
+    scheduled_at: null,
+    started_at: null,
+    completed_at: null,
+    canceled_at: null,
+    cancel_reason: null,
+    archived_at: null,
+    created_at: '2026-06-05T14:30:00Z',
+    updated_at: '2026-06-05T14:30:00Z',
+    deleted_at: null,
+  },
+  {
+    ...BASE_DEMAND,
+    id: 'demo-demand-003',
+    protocol_number: 'CJE-20240510-0003',
+    organization_id: 'demo-org-cliente',
+    created_by_user_id: 'demo-client-001',
+    assigned_admin_id: 'demo-admin-001',
+    title: 'Diligência no Fórum — São Bernardo do Campo/SP',
+    demand_type: 'diligencia_forum',
+    other_demand_type: null,
+    status: 'concluido',
+    urgency: 'normal',
+    city: 'São Bernardo do Campo',
+    state: 'SP',
+    service_location: 'Fórum Dr. Laudo Ferreira de Camargo',
+    deadline_date: '2026-05-20',
+    deadline_time: null,
+    process_number: '0009876-54.2023.8.26.0564',
+    required_professional: null,
+    instructions: null,
+    admin_notes: 'Cópia obtida e digitalizada. Enviada por e-mail.',
+    client_notes: null,
+    service_value: 180.0,
+    billing_type: 'mensal',
+    demand_source: 'client_form',
+    scheduled_at: '2026-05-15T08:00:00Z',
+    started_at: '2026-05-15T08:10:00Z',
+    completed_at: '2026-05-15T11:30:00Z',
+    canceled_at: null,
+    cancel_reason: null,
+    archived_at: null,
+    created_at: '2026-05-10T09:00:00Z',
+    updated_at: '2026-05-15T11:30:00Z',
+    deleted_at: null,
+  },
+]
+
+export const DEMO_STATS_CLIENTE: DashboardStats = {
+  total: 3,
+  nova_solicitacao: 1,
+  programado: 0,
+  em_andamento: 1,
+  concluido: 1,
+  arquivado: 0,
+  cancelado: 0,
+  urgentes: 1,
+  faturasAbertas: 1,
+  valorTotalMes: 530.0,
+}
+
+export const DEMO_STATS_ADMIN: DashboardStats = {
+  total: 12,
+  nova_solicitacao: 2,
+  programado: 1,
+  em_andamento: 4,
+  concluido: 4,
+  arquivado: 1,
+  cancelado: 0,
+  urgentes: 2,
+  faturasAbertas: 4,
+  valorTotalMes: 2850.0,
+}
