@@ -140,28 +140,23 @@ export default function NovoUsuarioPage() {
         return
       }
 
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true,
+      // API route uses service role — email_confirm: true, no confirmation email sent
+      const res = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          phone: data.phone || undefined,
+          role: data.role,
+          organization_id: orgId,
+        }),
       })
 
-      if (authError || !authData.user) {
-        toast.error(authError?.message ?? 'Erro ao criar conta de acesso.')
-        return
-      }
-
-      const { error: profileError } = await supabase.from('profiles').insert({
-        auth_user_id: authData.user.id,
-        organization_id: orgId,
-        name: data.name,
-        email: data.email,
-        phone: data.phone || null,
-        role: data.role as UserRole,
-      })
-
-      if (profileError) {
-        toast.error('Conta criada, mas houve erro no perfil. Verifique no Supabase.')
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}))
+        toast.error(error ?? 'Erro ao criar conta de acesso.')
         return
       }
 

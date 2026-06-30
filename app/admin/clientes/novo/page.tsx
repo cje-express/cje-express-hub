@@ -88,24 +88,27 @@ export default function AdminNovoClientePage() {
         return
       }
 
-      // 2. Create auth user (via signUp)
+      // 2. Create admin user via service role API (email_confirm: true — no confirmation email)
       if (data.admin_password) {
-        const { data: authData, error: authError } = await supabase.auth.admin
-          ? await supabase.auth.signUp({ email: data.admin_email, password: data.admin_password })
-          : { data: null, error: { message: 'Use Supabase dashboard or service role' } }
-
-        if (!authError && authData?.user) {
-          await supabase.from('profiles').insert({
-            auth_user_id: authData.user.id,
-            organization_id: org.id,
+        const res = await fetch('/api/users/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             name: data.admin_name,
             email: data.admin_email,
+            password: data.admin_password,
             role: 'ADMIN_CLIENTE',
-          })
-        }
-      }
+            organization_id: org.id,
+          }),
+        })
 
-      if (data.admin_password) {
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({}))
+          toast.error(error ?? 'Organização criada, mas erro ao criar usuário admin.')
+          router.push(`/admin/clientes/${org.id}`)
+          return
+        }
+
         setCreated({
           name: data.admin_name,
           email: data.admin_email,
