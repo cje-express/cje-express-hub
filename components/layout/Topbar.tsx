@@ -104,9 +104,9 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
   const [liveNotifs, setLiveNotifs] = useState<PreviewNotif[]>([])
   const [liveUnread, setLiveUnread] = useState(unreadNotifications)
 
-  // Avatar sync (demo + real)
+  // Avatar sync — only use localStorage in demo mode; in production the DB value is authoritative
   useEffect(() => {
-    if (!profile?.id) return
+    if (!IS_DEMO || !profile?.id) return
     try {
       const stored = JSON.parse(localStorage.getItem('cje_demo_avatars') ?? '{}')
       if (stored[profile.id]) setAvatarUrl(stored[profile.id])
