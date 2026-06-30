@@ -232,7 +232,17 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
               ) : (
                 displayNotifs.map((n) => (
                   <DropdownMenuItem key={n.id} asChild className="p-0">
-                    <Link href={getNotifHref(n.type ?? 'sistema', !!isAdmin)} className="flex gap-3 px-3 py-2.5 cursor-pointer">
+                    <Link
+                      href={getNotifHref(n.type ?? 'sistema', !!isAdmin)}
+                      className="flex gap-3 px-3 py-2.5 cursor-pointer"
+                      onClick={() => {
+                        if (!IS_DEMO && n.unread) {
+                          fetch(`/api/notifications/${n.id}`, { method: 'PATCH' }).catch(() => {})
+                          setLiveNotifs((prev) => prev.filter((x) => x.id !== n.id))
+                          setLiveUnread((c) => Math.max(0, c - 1))
+                        }
+                      }}
+                    >
                       <span className="text-base flex-shrink-0 mt-0.5">{n.icon}</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
