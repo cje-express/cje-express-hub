@@ -385,6 +385,12 @@ export default function AdminDemandaDetailPage() {
                   <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap">{demand.instructions}</p>
                 </div>
               )}
+              {demand.client_notes && (
+                <div className="rounded bg-blue-50 border border-blue-200 p-3">
+                  <p className="text-xs text-blue-600 font-medium mb-1">💬 Observação do Cliente</p>
+                  <p className="text-sm text-blue-800 whitespace-pre-wrap">{demand.client_notes}</p>
+                </div>
+              )}
               {demand.admin_notes && (
                 <div className="rounded bg-yellow-50 border border-yellow-200 p-3">
                   <p className="text-xs text-yellow-600 font-medium mb-1">Notas internas</p>

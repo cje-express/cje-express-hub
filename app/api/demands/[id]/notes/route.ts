@@ -24,12 +24,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Demanda não encontrada.' }, { status: 404 })
     }
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('demands')
-      .update({ client_notes: notes ?? null })
+      .update({ client_notes: notes?.trim() || null })
       .eq('id', id)
+      .select('id')
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[notes PATCH] update error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!updated || updated.length === 0) {
+      console.error('[notes PATCH] 0 rows updated for demand:', id)
+      return NextResponse.json({ error: 'Não foi possível salvar a observação.' }, { status: 500 })
+    }
 
     // Notify admins
     await notifyAdmins(supabase, {

@@ -11,7 +11,6 @@ export async function notifyAdmins(supabase: SupabaseClient, payload: NotifyPayl
     .from('profiles')
     .select('id')
     .in('role', ['SUPER_ADMIN_CJE', 'OPERADOR_CJE'])
-    .eq('status', 'active')
 
   if (!admins || admins.length === 0) return
 
