@@ -203,6 +203,18 @@ export default async function ClienteDemandaDetailPage({ params }: Props) {
             </Card>
           )}
 
+          {/* Observações do cliente */}
+          {d.client_notes && (
+            <Card className="border-blue-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-blue-700">Observações do Cliente</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{d.client_notes}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Anexos */}
           <Card>
             <CardHeader className="pb-3">

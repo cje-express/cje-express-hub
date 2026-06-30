@@ -22,6 +22,7 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
   const supabase = createClient()
   const [showNotes, setShowNotes] = useState(false)
   const [notes, setNotes] = useState(currentNotes ?? '')
+  const [savedNotes, setSavedNotes] = useState(currentNotes ?? '')
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -130,6 +131,7 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
       }
 
       toast.success('Observação salva com sucesso!')
+      setSavedNotes(notes.trim())
       setShowNotes(false)
       router.refresh()
     } catch {
@@ -174,13 +176,13 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
         <div className="border-t" />
 
         {/* Observações */}
-        {currentNotes && !showNotes && (
+        {savedNotes && !showNotes && (
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-gray-700">
             <div className="flex items-center gap-1.5 mb-1">
               <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
               <span className="text-xs font-medium text-blue-600">Observação registrada</span>
             </div>
-            <p className="text-xs text-gray-600 line-clamp-3">{currentNotes}</p>
+            <p className="text-xs text-gray-600 line-clamp-3">{savedNotes}</p>
             <button
               className="text-xs text-blue-600 underline mt-1"
               onClick={() => setShowNotes(true)}
@@ -198,7 +200,7 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
             onClick={() => setShowNotes(true)}
           >
             <MessageSquarePlus className="h-4 w-4" />
-            {currentNotes ? 'Editar observação' : 'Adicionar observação'}
+            {savedNotes ? 'Editar observação' : 'Adicionar observação'}
           </Button>
         ) : (
           <div className="space-y-3">
@@ -222,7 +224,7 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
                   <><Send className="h-3.5 w-3.5" />Salvar</>
                 )}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => { setShowNotes(false); setNotes(currentNotes ?? '') }}>
+              <Button size="sm" variant="ghost" onClick={() => { setShowNotes(false); setNotes(savedNotes) }}>
                 Cancelar
               </Button>
             </div>
