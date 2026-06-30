@@ -9,26 +9,23 @@ export default async function SolicitacoesPage() {
   await getServerProfile()
 
   let pendentes: any[] = []
+  let emAnalise: any[] = []
   let concluidos: any[] = []
+  let canceladas: any[] = []
 
   if (!IS_DEMO_MODE) {
     const supabase = await createClient()
 
-    const { data: pend } = await supabase
+    const { data: all } = await supabase
       .from('registration_requests')
       .select('*')
-      .in('status', ['pendente', 'em_analise'])
       .order('created_at', { ascending: false })
 
-    const { data: conc } = await supabase
-      .from('registration_requests')
-      .select('*')
-      .in('status', ['aprovado', 'recusado'])
-      .order('created_at', { ascending: false })
-      .limit(50)
-
-    pendentes = pend ?? []
-    concluidos = conc ?? []
+    const rows = all ?? []
+    pendentes  = rows.filter((r) => r.status === 'pendente')
+    emAnalise  = rows.filter((r) => r.status === 'em_analise')
+    concluidos = rows.filter((r) => r.status === 'aprovado')
+    canceladas = rows.filter((r) => r.status === 'recusado')
   }
 
   return (
@@ -47,7 +44,12 @@ export default async function SolicitacoesPage() {
           description="As solicitações de cadastro aparecem aqui quando conectado ao banco de dados."
         />
       ) : (
-        <SolicitacoesList pendentes={pendentes} concluidos={concluidos} />
+        <SolicitacoesList
+          pendentes={pendentes}
+          emAnalise={emAnalise}
+          concluidos={concluidos}
+          canceladas={canceladas}
+        />
       )}
     </div>
   )
