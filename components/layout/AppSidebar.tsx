@@ -14,6 +14,7 @@ import {
   UserCog,
   MessageCircle,
   Building2,
+  ClipboardList,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ const adminNavItems: NavItem[] = [
   { href: '/admin/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/admin/demandas', label: 'Demandas', icon: FileText },
   { href: '/admin/clientes', label: 'Clientes', icon: Building2 },
+  { href: '/admin/solicitacoes', label: 'Solicitações de Cadastro', icon: ClipboardList, superAdminOnly: true },
   { href: '/admin/financeiro', label: 'Financeiro', icon: CreditCard },
   { href: '/admin/usuarios', label: 'Usuários', icon: UserCog, superAdminOnly: true },
   { href: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
