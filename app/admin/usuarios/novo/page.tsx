@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ChevronLeft, Loader2, UserPlus } from 'lucide-react'
+import { ChevronLeft, Loader2, UserPlus, FileDown, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { IS_DEMO_MODE } from '@/lib/demo'
 import { USER_ROLE_LABELS, ORGANIZATION_TYPE_LABELS } from '@/lib/constants'
+import { downloadCredentialsPdf } from '@/lib/pdf-credentials'
 import type { UserRole } from '@/types'
 
 const schema = z.object({
@@ -50,6 +51,8 @@ export default function NovoUsuarioPage() {
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([])
+  const [created, setCreated] = useState<{ name: string; email: string; password: string; org: string; role: string } | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const {
     register,
@@ -91,8 +94,14 @@ export default function NovoUsuarioPage() {
     setIsLoading(true)
     try {
       if (IS_DEMO_MODE) {
+        setCreated({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          org: data.new_org_name ?? 'Demo Org',
+          role: USER_ROLE_LABELS[data.role] ?? data.role,
+        })
         toast.success(`Usuário "${data.name}" criado com sucesso! (demo)`)
-        router.push('/admin/usuarios')
         return
       }
 
@@ -156,8 +165,18 @@ export default function NovoUsuarioPage() {
         return
       }
 
+      const orgName = isCJERole
+        ? 'CJE Express'
+        : organizations.find((o) => o.id === orgId)?.name ?? data.new_org_name ?? ''
+
+      setCreated({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        org: orgName,
+        role: USER_ROLE_LABELS[data.role] ?? data.role,
+      })
       toast.success(`Usuário "${data.name}" criado com sucesso!`)
-      router.push('/admin/usuarios')
     } catch {
       toast.error('Erro inesperado. Tente novamente.')
     } finally {
@@ -166,6 +185,69 @@ export default function NovoUsuarioPage() {
   }
 
   const orgTypes = Object.entries(ORGANIZATION_TYPE_LABELS).filter(([k]) => k !== 'interno')
+
+  if (created) {
+    return (
+      <div className="max-w-lg mx-auto mt-10 space-y-6">
+        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-[#006497] to-[#094882] px-6 py-5 flex items-center gap-3">
+            <CheckCircle2 className="h-7 w-7 text-white flex-shrink-0" />
+            <div>
+              <h2 className="text-lg font-bold text-white">Usuário criado com sucesso!</h2>
+              <p className="text-white/70 text-sm">Baixe o PDF com os dados de acesso</p>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-4">
+            <div className="rounded-xl bg-gray-50 border divide-y text-sm">
+              {[
+                { label: 'Nome', value: created.name },
+                { label: 'Organização', value: created.org },
+                { label: 'Perfil', value: created.role },
+                { label: 'E-mail (login)', value: created.email },
+                { label: 'Senha inicial', value: created.password },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between px-4 py-2.5 gap-4">
+                  <span className="text-gray-500 shrink-0">{label}</span>
+                  <span className={`font-medium text-right truncate ${label === 'Senha inicial' ? 'font-mono text-blue-700 bg-blue-50 px-2 rounded' : 'text-gray-800'}`}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+              Guarde este documento em local seguro. Após o primeiro login, oriente o usuário a alterar a senha.
+            </div>
+          </div>
+
+          <div className="px-6 pb-6 flex flex-col gap-3">
+            <Button
+              className="w-full gap-2 bg-gradient-to-r from-[#006497] to-[#094882] text-white hover:opacity-90"
+              disabled={pdfLoading}
+              onClick={async () => {
+                setPdfLoading(true)
+                await downloadCredentialsPdf({
+                  name: created.name,
+                  email: created.email,
+                  password: created.password,
+                  organization: created.org,
+                  role: created.role,
+                })
+                setPdfLoading(false)
+              }}
+            >
+              {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+              Baixar PDF com dados de acesso
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => router.push('/admin/usuarios')}>
+              Ir para lista de usuários
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
