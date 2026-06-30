@@ -9,21 +9,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'E-mail inválido.' }, { status: 400 })
     }
 
-    // Demo mode: just acknowledge
     if (IS_DEMO_MODE) {
       return NextResponse.json({ ok: true })
     }
 
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
+    // Service role bypassa RLS — necessário pois a rota é pública (sem sessão)
+    const { createServiceClient } = await import('@/lib/supabase/server')
+    const supabase = await createServiceClient()
 
-    // Tenta salvar na tabela (se ela já existir após rodar migration 004)
-    try {
-      await supabase
-        .from('registration_requests')
-        .insert({ name, email, phone, comarca, info })
-    } catch {
-      // tabela ainda não existe — ignora e segue para notificação
+    // Salva a solicitação
+    const { error: insertError } = await supabase
+      .from('registration_requests')
+      .insert({ name, email, phone, comarca, info })
+
+    if (insertError) {
+      console.error('registration_requests insert error:', insertError)
+      return NextResponse.json({ error: 'Erro ao salvar solicitação.' }, { status: 500 })
     }
 
     // Monta mensagem resumindo a solicitação
@@ -43,15 +44,15 @@ export async function POST(req: NextRequest) {
       .eq('status', 'active')
 
     if (admins && admins.length > 0) {
-      const notifications = admins.map((admin) => ({
-        user_id: admin.id,
-        title: '📋 Nova solicitação de cadastro',
-        message,
-        type: 'novo_cadastro',
-        is_read: false,
-      }))
-
-      await supabase.from('notifications').insert(notifications)
+      await supabase.from('notifications').insert(
+        admins.map((admin) => ({
+          user_id: admin.id,
+          title: '📋 Nova solicitação de cadastro',
+          message,
+          type: 'novo_cadastro',
+          is_read: false,
+        }))
+      )
     }
 
     return NextResponse.json({ ok: true })
