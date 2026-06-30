@@ -111,13 +111,15 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
 
     setIsSaving(true)
     try {
-      const { error } = await supabase
-        .from('demands')
-        .update({ client_notes: notes.trim() })
-        .eq('id', demandId)
+      const res = await fetch(`/api/demands/${demandId}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notes.trim() }),
+      })
 
-      if (error) {
-        toast.error('Erro ao salvar observação.')
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}))
+        toast.error(error ?? 'Erro ao salvar observação.')
         return
       }
 
