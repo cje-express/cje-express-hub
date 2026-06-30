@@ -2,21 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerProfile } from '@/lib/server-session'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notifyAdmins } from '@/lib/notify-admins'
+import { IS_DEMO_MODE } from '@/lib/demo'
 
-export async function PATCH(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (IS_DEMO_MODE) return NextResponse.json({ ok: true })
+
   try {
     const { id } = await params
     const profile = await getServerProfile()
-    const { notes } = await req.json()
+    const { fileName } = await req.json()
 
     const supabase = await createServiceClient()
 
     const { data: demand } = await supabase
       .from('demands')
-      .select('id, organization_id, protocol_number, title')
+      .select('protocol_number, title, organization_id')
       .eq('id', id)
       .single()
 
@@ -24,23 +27,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Demanda não encontrada.' }, { status: 404 })
     }
 
-    const { error } = await supabase
-      .from('demands')
-      .update({ client_notes: notes ?? null })
-      .eq('id', id)
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    // Notify admins
     await notifyAdmins(supabase, {
-      title: '💬 Nova observação do cliente',
-      message: `${demand.protocol_number} — ${demand.title} (${profile.name})`,
+      title: '📎 Documento anexado pelo cliente',
+      message: `${demand.protocol_number} — ${demand.title} | Arquivo: ${fileName} (${profile.name})`,
       type: 'documento_anexado',
     })
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('notes PATCH error:', err)
+    console.error('attachment-notify error:', err)
     return NextResponse.json({ error: 'Erro interno.' }, { status: 500 })
   }
 }

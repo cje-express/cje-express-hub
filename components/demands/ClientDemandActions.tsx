@@ -85,6 +85,12 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
           toast.error(`Erro ao registrar "${file.name}".`)
         } else {
           successCount++
+          // Notify admins (fire-and-forget)
+          fetch(`/api/demands/${demandId}/attachment-notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name }),
+          }).catch(() => {})
         }
       }
 
