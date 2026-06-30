@@ -131,12 +131,14 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
     async function fetchNotifs() {
       try {
         // profile.id já é o profiles.id (não auth_user_id)
+        // Only fetch UNREAD notifications — read ones must not reappear in the dropdown
         const { data } = await supabase
           .from('notifications')
           .select('id, title, message, type, is_read, created_at')
           .eq('user_id', profile!.id)
+          .eq('is_read', false)
           .order('created_at', { ascending: false })
-          .limit(5)
+          .limit(10)
 
         if (data) {
           setLiveNotifs(data.map((n) => ({
@@ -146,9 +148,9 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
             message: n.message,
             time: n.created_at,
             type: n.type,
-            unread: !n.is_read,
+            unread: true,
           })))
-          setLiveUnread(data.filter((n) => !n.is_read).length)
+          setLiveUnread(data.length)
         }
       } catch {}
     }
