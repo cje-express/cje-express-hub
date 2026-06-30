@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import {
   Loader2, Lock, Mail, CheckCircle, Zap,
   FileText, Gavel, Building2, Stamp, Search, Users,
-  MessageCircle, ArrowRight, ChevronRight,
+  MessageCircle, ArrowRight, ChevronRight, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,16 +27,63 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
+const solicitarSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email('E-mail inválido'),
+  phone: z.string().optional(),
+  comarca: z.string().optional(),
+  info: z.string().optional(),
+})
+
+type SolicitarForm = z.infer<typeof solicitarSchema>
+
 export function LandingPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [tab, setTab] = useState<'login' | 'register'>('login')
+  const [showSolicitarModal, setShowSolicitarModal] = useState(false)
+  const [solicitarSent, setSolicitarSent] = useState(false)
+  const [solicitarLoading, setSolicitarLoading] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) })
+
+  const {
+    register: regSolicitar,
+    handleSubmit: handleSolicitar,
+    reset: resetSolicitar,
+    formState: { errors: errorsSolicitar },
+  } = useForm<SolicitarForm>({ resolver: zodResolver(solicitarSchema) })
+
+  async function onSolicitar(data: SolicitarForm) {
+    setSolicitarLoading(true)
+    try {
+      const res = await fetch('/api/solicitar-cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        toast.error(json.error ?? 'Erro ao enviar solicitação.')
+        return
+      }
+      setSolicitarSent(true)
+    } catch {
+      toast.error('Erro ao enviar. Tente novamente.')
+    } finally {
+      setSolicitarLoading(false)
+    }
+  }
+
+  function closeSolicitarModal() {
+    setShowSolicitarModal(false)
+    setSolicitarSent(false)
+    resetSolicitar()
+  }
 
   async function onLogin(data: LoginForm) {
     setIsLoading(true)
@@ -211,11 +258,13 @@ export function LandingPage() {
                       <p className="text-white/70 text-sm text-center">
                         Preencha seus dados para solicitar acesso à plataforma CJE Express.
                       </p>
-                      <Link href="/register">
-                        <button style={{ borderColor: '#ffffff' }} className="w-full h-12 rounded-full border-2 bg-transparent hover:bg-white/10 text-white font-bold text-base tracking-wide flex items-center justify-center gap-2 transition-colors">
-                          Solicitar cadastro <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </Link>
+                      <button
+                        onClick={() => setShowSolicitarModal(true)}
+                        style={{ borderColor: '#ffffff' }}
+                        className="w-full h-12 rounded-full border-2 bg-transparent hover:bg-white/10 text-white font-bold text-base tracking-wide flex items-center justify-center gap-2 transition-colors"
+                      >
+                        Solicitar cadastro <ArrowRight className="h-4 w-4" />
+                      </button>
                       <a
                         href={`${WHATSAPP_URL}?text=${encodeURIComponent('Olá, gostaria de solicitar acesso à plataforma CJE Express.')}`}
                         target="_blank"
@@ -376,6 +425,118 @@ export function LandingPage() {
           </p>
         </div>
       </footer>
+
+      {/* ══════════ MODAL SOLICITAR CADASTRO ══════════ */}
+      {showSolicitarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeSolicitarModal} />
+
+          {/* Card */}
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#006497] to-[#094882] px-6 py-5 text-center">
+              <h2 className="text-xl font-bold text-white">Cadastre sua Diligência Abaixo</h2>
+              <p className="text-white/70 text-sm mt-0.5">Resposta Imediata</p>
+              <button
+                onClick={closeSolicitarModal}
+                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-6">
+              {solicitarSent ? (
+                <div className="text-center py-6 space-y-4">
+                  <CheckCircle className="h-14 w-14 text-green-500 mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Solicitação enviada!</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Nossa equipe entrará em contato em breve para dar andamento ao seu cadastro.
+                    </p>
+                  </div>
+                  <button
+                    onClick={closeSolicitarModal}
+                    className="w-full h-11 rounded-lg bg-gradient-to-r from-[#006497] to-[#094882] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSolicitar(onSolicitar)} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Nome :</label>
+                    <input
+                      type="text"
+                      placeholder="Seu nome:"
+                      className="w-full h-10 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006497]/30 focus:border-[#006497]"
+                      {...regSolicitar('name')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      E-mail : <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Seu e-mail"
+                      className="w-full h-10 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006497]/30 focus:border-[#006497]"
+                      {...regSolicitar('email')}
+                    />
+                    {errorsSolicitar.email && (
+                      <p className="text-red-500 text-xs mt-1">{errorsSolicitar.email.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Celular :</label>
+                    <input
+                      type="tel"
+                      placeholder="Seu Whatsapp"
+                      className="w-full h-10 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006497]/30 focus:border-[#006497]"
+                      {...regSolicitar('phone')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Qual Comarca ? :</label>
+                    <input
+                      type="text"
+                      placeholder="Qual Comarca será realizada a diligência ?"
+                      className="w-full h-10 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006497]/30 focus:border-[#006497]"
+                      {...regSolicitar('comarca')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Informações sobre a Diligência :</label>
+                    <textarea
+                      placeholder="Nos dê uma breve explicação sobre a sua Diligência."
+                      rows={4}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006497]/30 focus:border-[#006497] resize-none"
+                      {...regSolicitar('info')}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={solicitarLoading}
+                    className="w-full h-11 rounded-lg bg-[#2196f3] hover:bg-[#1976d2] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+                  >
+                    {solicitarLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" />Enviando...</>
+                    ) : (
+                      'Enviar Solicitação de Diligência'
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
