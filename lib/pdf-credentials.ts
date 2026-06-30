@@ -9,6 +9,16 @@ export interface CredentialsPdfData {
   siteUrl?: string
 }
 
+async function toBase64(url: string): Promise<string> {
+  const res = await fetch(url)
+  const blob = await res.blob()
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.readAsDataURL(blob)
+  })
+}
+
 export async function downloadCredentialsPdf(data: CredentialsPdfData) {
   const { jsPDF } = await import('jspdf')
 
@@ -21,26 +31,34 @@ export async function downloadCredentialsPdf(data: CredentialsPdfData) {
 
   // ── Header bar ──────────────────────────────────────────────────────────────
   doc.setFillColor(0, 100, 151)
-  doc.rect(0, 0, W, 42, 'F')
+  doc.rect(0, 0, W, 48, 'F')
 
   doc.setFillColor(9, 72, 130)
-  doc.rect(0, 30, W, 12, 'F')
+  doc.rect(0, 36, W, 12, 'F')
+
+  // Logo (white PNG)
+  try {
+    const logoBase64 = await toBase64('/icons/logo-cje-white.png')
+    // Logo centered, height ~28mm, auto width
+    const logoH = 28
+    const logoW = logoH * 2.0   // approximate aspect ratio of the CJE logo
+    const logoX = (W - logoW) / 2
+    doc.addImage(logoBase64, 'PNG', logoX, 3, logoW, logoH)
+  } catch {
+    // Fallback: text only
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(22)
+    doc.text('CJE Express Hub', W / 2, 22, { align: 'center' })
+  }
 
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(22)
-  doc.text('CJE Express Hub', 20, 18)
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text('Sistema de Gestão de Diligências', 20, 26)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text('DADOS DE ACESSO — CONFIDENCIAL', 20, 38)
+  doc.setFontSize(11)
+  doc.text('DADOS DE ACESSO — CONFIDENCIAL', W / 2, 43, { align: 'center' })
 
   // ── Body ────────────────────────────────────────────────────────────────────
-  let y = 58
+  let y = 64
 
   function section(title: string) {
     doc.setFillColor(240, 245, 255)
