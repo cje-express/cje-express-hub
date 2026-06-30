@@ -104,18 +104,11 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
 
     async function fetchNotifs() {
       try {
-        const { data: profileRow } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('auth_user_id', profile!.id)
-          .maybeSingle()
-
-        if (!profileRow?.id) return
-
+        // profile.id já é o profiles.id (não auth_user_id)
         const { data } = await supabase
           .from('notifications')
           .select('id, title, message, type, is_read, created_at')
-          .eq('user_id', profileRow.id)
+          .eq('user_id', profile!.id)
           .order('created_at', { ascending: false })
           .limit(5)
 
