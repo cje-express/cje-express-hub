@@ -5,7 +5,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 export async function POST(req: NextRequest) {
   try {
     const profile = await getServerProfile()
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(_req: NextRequest) {
   try {
     const profile = await getServerProfile()
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     // Try to remove all common extensions
     await supabase.storage.from('avatars').remove([

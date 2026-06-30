@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     // Service role bypassa RLS — necessário pois a rota é pública (sem sessão)
     const { createServiceClient } = await import('@/lib/supabase/server')
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     // Salva a solicitação
     const { error: insertError } = await supabase

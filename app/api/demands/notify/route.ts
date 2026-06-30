@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { title, protocol, orgName } = await req.json()
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     await notifyAdmins(supabase, {
       title: '📋 Nova demanda recebida',

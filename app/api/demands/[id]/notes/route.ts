@@ -12,7 +12,7 @@ export async function PATCH(
     const profile = await getServerProfile()
     const { notes } = await req.json()
 
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     const { data: demand } = await supabase
       .from('demands')

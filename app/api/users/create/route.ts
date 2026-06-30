@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Service role: bypasses email confirmation requirement
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,

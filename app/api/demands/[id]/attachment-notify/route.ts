@@ -15,7 +15,7 @@ export async function POST(
     const profile = await getServerProfile()
     const { fileName } = await req.json()
 
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     const { data: demand } = await supabase
       .from('demands')
