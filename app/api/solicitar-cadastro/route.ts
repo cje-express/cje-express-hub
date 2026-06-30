@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         user_id: admin.id,
         title: '📋 Nova solicitação de cadastro',
         message,
-        type: 'sistema',
+        type: 'novo_cadastro',
         is_read: false,
       }))
 
