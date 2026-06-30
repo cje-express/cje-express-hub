@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { UserRoleBadge } from '@/components/common/UserRoleBadge'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { createClient } from '@/lib/supabase/client'
@@ -234,6 +234,7 @@ export default function EditarUsuarioPage() {
         </Link>
         <div className="flex items-center gap-3 flex-1">
           <Avatar className="h-12 w-12">
+            <AvatarImage src={profile?.avatar_url ?? undefined} className="object-cover" />
             <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
               {getInitials(profile?.name ?? '')}
             </AvatarFallback>

@@ -6,7 +6,7 @@ import { getServerProfile } from '@/lib/server-session'
 import { IS_DEMO_MODE } from '@/lib/demo'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { UserRoleBadge } from '@/components/common/UserRoleBadge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { getInitials, formatDate } from '@/lib/utils'
@@ -121,6 +121,7 @@ export default async function AdminUsuariosPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
+                        <AvatarImage src={p.avatar_url ?? undefined} className="object-cover" />
                         <AvatarFallback className="text-xs bg-gray-100">
                           {getInitials(p.name)}
                         </AvatarFallback>
