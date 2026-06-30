@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Clock, CheckCircle2, XCircle, Eye, User, Mail,
   Phone, MapPin, MessageSquare, ClipboardList, X,
-  Search,
+  Search, type LucideIcon,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,7 @@ interface RegistrationRequest {
 
 type Tab = 'pendentes' | 'em_analise' | 'concluidos' | 'canceladas'
 
-const TABS: { key: Tab; label: string; icon: React.ElementType; color: string }[] = [
+const TABS: { key: Tab; label: string; icon: LucideIcon; color: string }[] = [
   { key: 'pendentes',   label: 'Pendentes',  icon: Clock,         color: 'text-orange-500' },
   { key: 'em_analise',  label: 'Em Análise', icon: Search,        color: 'text-blue-500' },
   { key: 'concluidos',  label: 'Concluídos', icon: CheckCircle2,  color: 'text-green-500' },
@@ -390,7 +390,7 @@ export function SolicitacoesList({ pendentes, emAnalise, concluidos, canceladas 
 
 function DetailRow({
   icon: Icon, label, value, href,
-}: { icon: React.ElementType; label: string; value: string; href?: string }) {
+}: { icon: LucideIcon; label: string; value: string; href?: string }) {
   return (
     <div className="flex items-start gap-3">
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 flex-shrink-0">
