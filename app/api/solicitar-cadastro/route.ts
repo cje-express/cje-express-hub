@@ -17,19 +17,25 @@ export async function POST(req: NextRequest) {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
 
-    // Salva a solicitação
-    const { data: reqData, error: reqError } = await supabase
-      .from('registration_requests')
-      .insert({ name, email, phone, comarca, info })
-      .select('id')
-      .single()
-
-    if (reqError) {
-      console.error('registration_requests insert error:', reqError)
-      return NextResponse.json({ error: 'Erro ao salvar solicitação.' }, { status: 500 })
+    // Tenta salvar na tabela (se ela já existir após rodar migration 004)
+    try {
+      await supabase
+        .from('registration_requests')
+        .insert({ name, email, phone, comarca, info })
+    } catch {
+      // tabela ainda não existe — ignora e segue para notificação
     }
 
-    // Busca todos os super admins e operadores CJE para notificar
+    // Monta mensagem resumindo a solicitação
+    const parts: string[] = []
+    if (name) parts.push(`Nome: ${name}`)
+    parts.push(`E-mail: ${email}`)
+    if (phone) parts.push(`Celular: ${phone}`)
+    if (comarca) parts.push(`Comarca: ${comarca}`)
+    if (info) parts.push(`Info: ${info}`)
+    const message = parts.join(' | ')
+
+    // Busca super admins e operadores CJE para notificar
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
@@ -39,9 +45,9 @@ export async function POST(req: NextRequest) {
     if (admins && admins.length > 0) {
       const notifications = admins.map((admin) => ({
         user_id: admin.id,
-        title: 'Nova solicitação de cadastro',
-        message: `${name || email} solicitou acesso à plataforma.${comarca ? ` Comarca: ${comarca}.` : ''}`,
-        type: 'novo_cadastro' as const,
+        title: '📋 Nova solicitação de cadastro',
+        message,
+        type: 'sistema',
         is_read: false,
       }))
 
