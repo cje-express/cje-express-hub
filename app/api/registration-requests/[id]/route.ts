@@ -4,9 +4,10 @@ import { getServerProfile } from '@/lib/server-session'
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const profile = await getServerProfile()
     if (!['SUPER_ADMIN_CJE', 'OPERADOR_CJE'].includes(profile.role)) {
       return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 })
@@ -21,7 +22,7 @@ export async function PATCH(
     const { error } = await supabase
       .from('registration_requests')
       .update({ status })
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
