@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm, FormProvider } from 'react-hook-form'
@@ -56,6 +56,13 @@ interface SelectedFile {
   error?: string
 }
 
+interface OrgInfo {
+  name: string
+  cnpj_cpf: string | null
+  email: string | null
+  phone: string | null
+}
+
 export default function NovaDemandaPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -64,6 +71,28 @@ export default function NovaDemandaPage() {
   const [files, setFiles] = useState<SelectedFile[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [org, setOrg] = useState<OrgInfo | null>(null)
+
+  useEffect(() => {
+    if (IS_DEMO) return
+    async function loadOrg() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('auth_user_id', user.id)
+        .single()
+      if (!profile?.organization_id) return
+      const { data: organization } = await supabase
+        .from('organizations')
+        .select('name, cnpj_cpf, email, phone')
+        .eq('id', profile.organization_id)
+        .single()
+      if (organization) setOrg(organization)
+    }
+    loadOrg()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const methods = useForm<FormData>({
     resolver: zodResolver(baseSchema),
@@ -359,19 +388,19 @@ export default function NovaDemandaPage() {
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-xs text-green-600">Empresa</p>
-                        <p className="font-medium text-gray-900">Escritório Demo Advogados</p>
+                        <p className="font-medium text-gray-900">{org?.name ?? '—'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-green-600">CNPJ</p>
-                        <p className="font-medium text-gray-900">12.345.678/0001-99</p>
+                        <p className="font-medium text-gray-900">{org?.cnpj_cpf ?? '—'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-green-600">E-mail</p>
-                        <p className="font-medium text-gray-900">contato@demo-adv.com.br</p>
+                        <p className="font-medium text-gray-900">{org?.email ?? '—'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-green-600">Telefone</p>
-                        <p className="font-medium text-gray-900">(11) 3333-4444</p>
+                        <p className="font-medium text-gray-900">{org?.phone ?? '—'}</p>
                       </div>
                     </div>
                   </div>
@@ -440,8 +469,8 @@ export default function NovaDemandaPage() {
                       {values.billing_email && <ReviewRow label="E-mail" value={values.billing_email} />}
                     </>
                   )}
-                  {billingType === 'mensal' && (
-                    <ReviewRow label="Empresa" value="Escritório Demo Advogados — 12.345.678/0001-99" />
+                  {billingType === 'mensal' && org && (
+                    <ReviewRow label="Empresa" value={`${org.name}${org.cnpj_cpf ? ` — ${org.cnpj_cpf}` : ''}`} />
                   )}
                 </div>
 
