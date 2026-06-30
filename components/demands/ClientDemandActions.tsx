@@ -1,11 +1,16 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Paperclip, MessageSquarePlus, Send, Loader2, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Paperclip, MessageSquarePlus, Send, Loader2, X, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/client'
+
+const IS_DEMO = !process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('supabase.co') ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')
 
 interface ClientDemandActionsProps {
   demandId: string
@@ -13,40 +18,117 @@ interface ClientDemandActionsProps {
 }
 
 export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActionsProps) {
+  const router = useRouter()
+  const supabase = createClient()
   const [showNotes, setShowNotes] = useState(false)
   const [notes, setNotes] = useState(currentNotes ?? '')
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function getProfile() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, organization_id')
+      .eq('auth_user_id', user.id)
+      .single()
+    return data
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files
+    if (!selected || selected.length === 0) return
+
+    if (IS_DEMO) {
+      toast.success(`${selected.length} documento(s) anexado(s)! (demo)`)
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const profile = await getProfile()
+      if (!profile) { toast.error('Sessão expirada'); return }
+
+      let successCount = 0
+      for (const file of Array.from(selected)) {
+        const filePath = `organizations/${profile.organization_id}/demands/${demandId}/${Date.now()}-${file.name}`
+        const { error: uploadError } = await supabase.storage
+          .from('demand-documents')
+          .upload(filePath, file)
+
+        if (uploadError) {
+          toast.error(`Erro ao enviar "${file.name}": ${uploadError.message}`)
+          continue
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from('demand-documents').getPublicUrl(filePath)
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 90)
+
+        const { error: insertError } = await supabase.from('demand_attachments').insert({
+          demand_id: demandId,
+          uploaded_by_user_id: profile.id,
+          file_name: file.name,
+          file_url: publicUrl,
+          file_path: filePath,
+          file_type: file.type,
+          file_size: file.size,
+          category: 'client_document',
+          visibility: 'client_and_admin',
+          expires_at: expiresAt.toISOString(),
+        })
+
+        if (insertError) {
+          toast.error(`Erro ao registrar "${file.name}".`)
+        } else {
+          successCount++
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} documento(s) anexado(s) com sucesso!`)
+        router.refresh()
+      }
+    } catch {
+      toast.error('Erro inesperado ao enviar.')
+    } finally {
+      setIsUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   async function handleSaveNotes() {
     if (!notes.trim()) return
-    setIsSaving(true)
-    setTimeout(() => {
-      toast.success('Observação adicionada com sucesso! (demo)')
-      setIsSaving(false)
+
+    if (IS_DEMO) {
+      toast.success('Observação adicionada! (demo)')
       setShowNotes(false)
-    }, 800)
-  }
+      return
+    }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files
-    if (!files) return
+    setIsSaving(true)
+    try {
+      const { error } = await supabase
+        .from('demands')
+        .update({ client_notes: notes.trim() })
+        .eq('id', demandId)
 
-    setIsUploading(true)
-    const newFiles = Array.from(files).map((f) => ({ name: f.name, size: f.size }))
+      if (error) {
+        toast.error('Erro ao salvar observação.')
+        return
+      }
 
-    setTimeout(() => {
-      setUploadedFiles((prev) => [...prev, ...newFiles])
-      setIsUploading(false)
-      toast.success(`${newFiles.length} documento(s) anexado(s) com sucesso! (demo)`)
-      if (fileRef.current) fileRef.current.value = ''
-    }, 1000)
-  }
-
-  function removeFile(idx: number) {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== idx))
+      toast.success('Observação salva com sucesso!')
+      setShowNotes(false)
+      router.refresh()
+    } catch {
+      toast.error('Erro inesperado.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -79,28 +161,27 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
             onChange={handleFileSelect}
             className="hidden"
           />
-
-          {uploadedFiles.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {uploadedFiles.map((f, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border bg-green-50 border-green-200 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-700 truncate">{f.name}</p>
-                    <p className="text-[10px] text-gray-400">{(f.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                  <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500 ml-2">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Separador */}
         <div className="border-t" />
 
         {/* Observações */}
+        {currentNotes && !showNotes && (
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-gray-700">
+            <div className="flex items-center gap-1.5 mb-1">
+              <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
+              <span className="text-xs font-medium text-blue-600">Observação registrada</span>
+            </div>
+            <p className="text-xs text-gray-600 line-clamp-3">{currentNotes}</p>
+            <button
+              className="text-xs text-blue-600 underline mt-1"
+              onClick={() => setShowNotes(true)}
+            >
+              Editar
+            </button>
+          </div>
+        )}
+
         {!showNotes ? (
           <Button
             variant="outline"
@@ -109,7 +190,7 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
             onClick={() => setShowNotes(true)}
           >
             <MessageSquarePlus className="h-4 w-4" />
-            Adicionar observação
+            {currentNotes ? 'Editar observação' : 'Adicionar observação'}
           </Button>
         ) : (
           <div className="space-y-3">
@@ -130,10 +211,10 @@ export function ClientDemandActions({ demandId, currentNotes }: ClientDemandActi
                 {isSaving ? (
                   <><Loader2 className="h-3.5 w-3.5 animate-spin" />Salvando...</>
                 ) : (
-                  <><Send className="h-3.5 w-3.5" />Enviar</>
+                  <><Send className="h-3.5 w-3.5" />Salvar</>
                 )}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowNotes(false)}>
+              <Button size="sm" variant="ghost" onClick={() => { setShowNotes(false); setNotes(currentNotes ?? '') }}>
                 Cancelar
               </Button>
             </div>
