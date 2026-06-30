@@ -206,6 +206,18 @@ export default function NovaDemandaPage() {
         })
       }
 
+      // Notificar admins sobre nova demanda
+      fetch('/api/demands/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          demandId: demand.id,
+          title: demand.title,
+          protocol: demand.protocol_number,
+          orgName: org?.name ?? '',
+        }),
+      }).catch(() => {})
+
       const validFiles = files.filter((f) => !f.error)
       for (const { file } of validFiles) {
         const filePath = `organizations/${profile.organization_id}/demands/${demand.id}/${Date.now()}-${file.name}`

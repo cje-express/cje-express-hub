@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import { UserRoleBadge } from '@/components/common/UserRoleBadge'
 import { ORGANIZATION_TYPE_LABELS, DEMAND_TYPE_LABELS } from '@/lib/constants'
 import { formatDate, formatCurrency, getInitials } from '@/lib/utils'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import type { Organization, Profile, Demand } from '@/types'
 
 interface Props {
@@ -125,6 +125,7 @@ export default async function AdminClienteDetailPage({ params }: Props) {
                   {(members as Profile[]).map((m) => (
                     <div key={m.id} className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
+                        <AvatarImage src={m.avatar_url ?? undefined} className="object-cover" />
                         <AvatarFallback className="text-xs bg-gray-100">
                           {getInitials(m.name)}
                         </AvatarFallback>
