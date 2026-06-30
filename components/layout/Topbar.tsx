@@ -23,22 +23,22 @@ const IS_DEMO = !process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('supabase.co') |
 
 const DEMO_PREVIEW_NOTIFS = [
   {
-    id: 'n1', icon: '🔄', title: 'Status atualizado',
+    id: 'n1', icon: '🔄', title: 'Status atualizado', type: 'status_atualizado',
     message: 'Audiência — São Paulo/SP mudou para Em Andamento',
     time: '2026-06-15T09:05:00Z', unread: true,
   },
   {
-    id: 'n2', icon: '🔄', title: 'Valor definido',
+    id: 'n2', icon: '🔄', title: 'Valor definido', type: 'status_atualizado',
     message: 'Demanda CJE-20240601-0001: R$ 350,00',
     time: '2026-06-15T09:00:00Z', unread: true,
   },
   {
-    id: 'n3', icon: '💰', title: 'Nova fatura disponível',
+    id: 'n3', icon: '💰', title: 'Nova fatura disponível', type: 'fatura_gerada',
     message: 'FAT-2026-0001 — R$ 530,00. Venc: 30/06',
     time: '2026-06-14T14:00:00Z', unread: true,
   },
   {
-    id: 'n4', icon: '📋', title: 'Demanda programada',
+    id: 'n4', icon: '📋', title: 'Demanda programada', type: 'nova_demanda',
     message: 'Audiência — São Paulo/SP programada',
     time: '2026-06-14T10:30:00Z', unread: false,
   },
@@ -55,6 +55,31 @@ const TYPE_ICONS: Record<string, string> = {
   sistema: '🔔',
 }
 
+function getNotifHref(type: string, isAdmin: boolean): string {
+  if (isAdmin) {
+    switch (type) {
+      case 'novo_cadastro':   return '/admin/solicitacoes'
+      case 'nova_demanda':
+      case 'status_atualizado':
+      case 'demanda_concluida':
+      case 'prazo_proximo':
+      case 'documento_anexado': return '/admin/demandas'
+      case 'fatura_gerada':   return '/admin/financeiro'
+      default:                return '/admin/notificacoes'
+    }
+  } else {
+    switch (type) {
+      case 'nova_demanda':
+      case 'status_atualizado':
+      case 'demanda_concluida':
+      case 'prazo_proximo':
+      case 'documento_anexado': return '/cliente/demandas'
+      case 'fatura_gerada':   return '/cliente/financeiro'
+      default:                return '/cliente/notificacoes'
+    }
+  }
+}
+
 interface PreviewNotif {
   id: string
   icon: string
@@ -62,6 +87,7 @@ interface PreviewNotif {
   message: string
   time: string
   unread: boolean
+  type?: string
 }
 
 interface TopbarProps {
@@ -119,6 +145,7 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
             title: n.title,
             message: n.message,
             time: n.created_at,
+            type: n.type,
             unread: !n.is_read,
           })))
           setLiveUnread(data.filter((n) => !n.is_read).length)
@@ -205,7 +232,7 @@ export function Topbar({ profile, isAdmin, onMenuToggle, unreadNotifications = 0
               ) : (
                 displayNotifs.map((n) => (
                   <DropdownMenuItem key={n.id} asChild className="p-0">
-                    <Link href={notifHref} className="flex gap-3 px-3 py-2.5 cursor-pointer">
+                    <Link href={getNotifHref(n.type ?? 'sistema', !!isAdmin)} className="flex gap-3 px-3 py-2.5 cursor-pointer">
                       <span className="text-base flex-shrink-0 mt-0.5">{n.icon}</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
